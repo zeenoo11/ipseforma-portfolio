@@ -1,0 +1,9 @@
+services:
+  portfolio:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ipseforma-portfolio
+    restart: unless-stopped
+    ports:
+      - "8081:80"
