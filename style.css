@@ -1,14 +1,27 @@
 /* Jinwoo Jeon — Portfolio (design 6a: Full-bleed → white/green continuous scroll) */
 
 :root {
-  --acc: oklch(0.55 0.11 155);        /* primary green — bars, badges, buttons */
-  --acc-label: oklch(0.5 0.12 155);   /* section eyebrows on light */
-  --acc-dot: oklch(0.55 0.13 155);    /* status dot */
-  --acc-light: oklch(0.8 0.12 155);   /* eyebrows / dates on dark green */
-  --acc-light-dot: oklch(0.8 0.14 155);
+  --acc: #318454;        /* sRGB fallback — primary green — bars, badges, buttons */
+  --acc-label: #0b7643;  /* sRGB fallback — section eyebrows on light */
+  --acc-dot: #14874e;    /* sRGB fallback — status dot */
+  --acc-light: #7ad59c;  /* sRGB fallback — eyebrows / dates on dark green */
+  --acc-light-dot: #6ad895;
   --page: #f6f9f5;
   --deep: #0f2b1c;
   --page-w: 430px;
+}
+
+/* Custom properties store oklch() as opaque tokens even in browsers that can't
+   render it, so a plain re-declaration above can't fall back at use time —
+   gate the upgrade behind a support check instead. */
+@supports (color: oklch(0.55 0.11 155)) {
+  :root {
+    --acc: oklch(0.55 0.11 155);
+    --acc-label: oklch(0.5 0.12 155);
+    --acc-dot: oklch(0.55 0.13 155);
+    --acc-light: oklch(0.8 0.12 155);
+    --acc-light-dot: oklch(0.8 0.14 155);
+  }
 }
 
 * { box-sizing: border-box; }

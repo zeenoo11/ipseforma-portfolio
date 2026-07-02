@@ -107,9 +107,9 @@
     <article class="project">
       <div class="project__head">
         <span class="project__name">RoundCB</span>
-        <span class="badge badge--fill">KIIE 춘계학술대회</span>
+        <span class="badge badge--fill" lang="ko">KIIE 춘계학술대회</span>
       </div>
-      <p class="project__desc">연합학습 기반 가구 단위 피크부하 예측. 각 가정의 전력 데이터를 중앙 서버로 모으지 않고 학습하는 프레임워크.</p>
+      <p class="project__desc" lang="ko">연합학습 기반 가구 단위 피크부하 예측. 각 가정의 전력 데이터를 중앙 서버로 모으지 않고 학습하는 프레임워크.</p>
       <div class="tags">
         <span class="tag">Federated Learning</span>
         <span class="tag">Peak Load</span>
@@ -121,7 +121,7 @@
         <span class="project__name">V2G Net-load Forecasting</span>
         <span class="badge badge--outline">RESEARCH</span>
       </div>
-      <p class="project__desc">GNN의 적응형 인접행렬과 SUMO 시뮬레이션을 활용한 V2G(Vehicle-to-Grid) 환경 넷로드 예측 연구.</p>
+      <p class="project__desc" lang="ko">GNN의 적응형 인접행렬과 SUMO 시뮬레이션을 활용한 V2G(Vehicle-to-Grid) 환경 넷로드 예측 연구.</p>
       <div class="tags">
         <span class="tag">GNN</span>
         <span class="tag">SUMO</span>
@@ -133,7 +133,7 @@
         <span class="project__name">Philograph</span>
         <span class="badge badge--outline">SERVICE</span>
       </div>
-      <p class="project__desc">SEP(스탠퍼드 철학 백과) 아티클로 구축한 철학 지식그래프. GNN과 GraphRAG로 서비스 구축.</p>
+      <p class="project__desc" lang="ko">SEP(스탠퍼드 철학 백과) 아티클로 구축한 철학 지식그래프. GNN과 GraphRAG로 서비스 구축.</p>
       <div class="tags">
         <span class="tag">Knowledge Graph</span>
         <span class="tag">GraphRAG</span>
@@ -151,12 +151,12 @@
     <div class="skill">
       <div class="skill__head"><span class="skill__name">Data Analysis</span><span class="skill__meta">ML · DL · PyTorch</span></div>
       <div class="skill__bar"><span class="skill__fill" style="width:88%"></span></div>
-      <p class="skill__desc">모델링부터 검증까지 — 시계열 예측, 딥러닝 아키텍처 설계, 실험 관리.</p>
+      <p class="skill__desc" lang="ko">모델링부터 검증까지 — 시계열 예측, 딥러닝 아키텍처 설계, 실험 관리.</p>
     </div>
     <div class="skill">
       <div class="skill__head"><span class="skill__name">Software</span><span class="skill__meta">Python · DBMS</span></div>
       <div class="skill__bar"><span class="skill__fill" style="width:76%"></span></div>
-      <p class="skill__desc">연구를 서비스로 옮기는 엔지니어링 — 데이터 파이프라인, DB 설계, 배포.</p>
+      <p class="skill__desc" lang="ko">연구를 서비스로 옮기는 엔지니어링 — 데이터 파이프라인, DB 설계, 배포.</p>
     </div>
     <div class="used">
       <div class="used__label">ONCE I'VE USED</div>
@@ -179,9 +179,12 @@
       <a href="https://www.linkedin.com/in/jinwoojeon">LINKEDIN</a>
       <a href="https://www.instagram.com/zeeee_noo">INSTAGRAM</a>
     </div>
-    <div class="footer__copy">© 2026 Jinwoo Jeon — Daegu, KR</div>
+    <div class="footer__copy">© <span id="year">2026</span> Jinwoo Jeon — Daegu, KR</div>
   </footer>
 
 </div>
+<script>
+  document.getElementById('year').textContent = new Date().getFullYear();
+</script>
 </body>
 </html>
