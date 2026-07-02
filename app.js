@@ -42,6 +42,8 @@
       gbThanks: 'Thanks for signing — your entry is live.',
       gbEmpty: 'The guestbook is empty — be the first to sign.',
       footHead: 'Let’s build a happier, cleaner world.',
+      btnEdit: 'Edit', btnDelete: 'Delete', confirmDel: 'Sure?',
+      btnSave: 'Save', btnCancel: 'Cancel',
       err_required: 'Please fill in your name and message.',
       err_server: 'Couldn’t reach the server. Please try again.'
     },
@@ -83,6 +85,8 @@
       gbThanks: '남겨주셔서 감사합니다 — 방명록에 등록됐어요.',
       gbEmpty: '아직 방명록이 비어 있어요. 첫 번째로 남겨보세요.',
       footHead: '더 행복하고 깨끗한 세상을 함께 만들어요.',
+      btnEdit: '수정', btnDelete: '삭제', confirmDel: '정말 삭제?',
+      btnSave: '저장', btnCancel: '취소',
       err_required: '이름과 메시지를 입력해주세요.',
       err_server: '서버 연결에 실패했어요. 잠시 후 다시 시도해주세요.'
     }
@@ -109,6 +113,7 @@
     });
     langBtn.textContent = lang === 'en' ? '한국어' : 'English';
     if (gbErrorCode) gbErrorEl.textContent = t['err_' + gbErrorCode] || '';
+    renderEntries();
   }
 
   langBtn.addEventListener('click', function () {
@@ -143,12 +148,112 @@
     return d.getFullYear() + '.' + String(d.getMonth() + 1).padStart(2, '0') + '.' + String(d.getDate()).padStart(2, '0');
   }
 
+  var editIdx = -1;
+  var armedDelIdx = -1;
+  var armTimer = null;
+
+  function persistLocal() {
+    if (mode !== 'local') return;
+    try { localStorage.setItem('jw_guestbook', JSON.stringify(entries)); } catch (e) {}
+  }
+
+  function removeEntry(idx) {
+    var en = entries[idx];
+    function done() {
+      entries.splice(idx, 1);
+      if (editIdx === idx) editIdx = -1;
+      setError('');
+      persistLocal();
+      renderEntries();
+    }
+    if (mode === 'server') {
+      fetch('/api/guestbook/' + encodeURIComponent(en.id), { method: 'DELETE' })
+        .then(function (res) { if (!res.ok) throw new Error('fail'); done(); })
+        .catch(function () { setError('server'); });
+    } else {
+      done();
+    }
+  }
+
+  function updateEntry(idx, name, role, message) {
+    var en = entries[idx];
+    var patch = { name: name, role: role, message: message };
+    function done() {
+      entries[idx] = Object.assign({}, en, patch);
+      editIdx = -1;
+      setError('');
+      persistLocal();
+      renderEntries();
+    }
+    if (mode === 'server') {
+      fetch('/api/guestbook/' + encodeURIComponent(en.id), {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(patch)
+      })
+        .then(function (res) { if (!res.ok) throw new Error('fail'); done(); })
+        .catch(function () { setError('server'); });
+    } else {
+      done();
+    }
+  }
+
+  function makeInput(tag, className, value, placeholder) {
+    var el = document.createElement(tag);
+    el.className = className;
+    el.value = value;
+    el.placeholder = placeholder;
+    if (tag === 'textarea') el.rows = 3;
+    return el;
+  }
+
   function renderEntries() {
+    var t = T[lang];
     gbEntries.querySelectorAll('.gb-entry').forEach(function (el) { el.remove(); });
     gbEmpty.hidden = entries.length > 0;
-    entries.forEach(function (en) {
+    entries.forEach(function (en, idx) {
       var card = document.createElement('div');
       card.className = 'gb-entry';
+
+      if (idx === editIdx) {
+        var form = document.createElement('div');
+        form.className = 'gb-entry__form';
+        var nameIn = makeInput('input', 'gb__input gb__input--sm', en.name || '', t.phName);
+        var roleIn = makeInput('input', 'gb__input gb__input--sm', en.role || '', t.phRole);
+        var msgIn = makeInput('textarea', 'gb__input gb__input--sm gb__textarea', en.message || '', t.phMsg);
+        var btns = document.createElement('div');
+        btns.className = 'gb-entry__btns';
+        var saveBtn = document.createElement('button');
+        saveBtn.type = 'button';
+        saveBtn.className = 'gb-entry__save';
+        saveBtn.textContent = t.btnSave;
+        saveBtn.addEventListener('click', function () {
+          var name = (nameIn.value || '').trim();
+          var role = (roleIn.value || '').trim() || 'Visitor';
+          var message = (msgIn.value || '').trim();
+          if (!name || !message) { setError('required'); return; }
+          updateEntry(idx, name, role, message);
+        });
+        var cancelBtn = document.createElement('button');
+        cancelBtn.type = 'button';
+        cancelBtn.className = 'gb-entry__cancel';
+        cancelBtn.textContent = t.btnCancel;
+        cancelBtn.addEventListener('click', function () {
+          editIdx = -1;
+          setError('');
+          renderEntries();
+        });
+        btns.appendChild(saveBtn);
+        btns.appendChild(cancelBtn);
+        form.appendChild(nameIn);
+        form.appendChild(roleIn);
+        form.appendChild(msgIn);
+        form.appendChild(btns);
+        card.appendChild(form);
+        gbEntries.appendChild(card);
+        return;
+      }
+
       var top = document.createElement('div');
       top.className = 'gb-entry__top';
       var name = document.createElement('span');
@@ -165,9 +270,45 @@
       var msg = document.createElement('div');
       msg.className = 'gb-entry__msg';
       msg.textContent = en.message || '';
+
+      var actions = document.createElement('div');
+      actions.className = 'gb-entry__actions';
+      var editBtn = document.createElement('button');
+      editBtn.type = 'button';
+      editBtn.className = 'gb-entry__act';
+      editBtn.textContent = t.btnEdit;
+      editBtn.addEventListener('click', function () {
+        editIdx = idx;
+        armedDelIdx = -1;
+        setError('');
+        renderEntries();
+      });
+      var delBtn = document.createElement('button');
+      delBtn.type = 'button';
+      delBtn.className = 'gb-entry__act gb-entry__act--danger' + (idx === armedDelIdx ? ' gb-entry__act--armed' : '');
+      delBtn.textContent = idx === armedDelIdx ? t.confirmDel : t.btnDelete;
+      delBtn.addEventListener('click', function () {
+        if (armedDelIdx === idx) {
+          clearTimeout(armTimer);
+          armedDelIdx = -1;
+          removeEntry(idx);
+        } else {
+          armedDelIdx = idx;
+          renderEntries();
+          clearTimeout(armTimer);
+          armTimer = setTimeout(function () {
+            armedDelIdx = -1;
+            renderEntries();
+          }, 3000);
+        }
+      });
+      actions.appendChild(editBtn);
+      actions.appendChild(delBtn);
+
       card.appendChild(top);
       card.appendChild(role);
       card.appendChild(msg);
+      card.appendChild(actions);
       gbEntries.appendChild(card);
     });
   }
@@ -216,6 +357,8 @@
     var entry = { name: name, role: role, message: message, timestamp: new Date().toISOString() };
 
     function done() {
+      editIdx = -1;
+      armedDelIdx = -1;
       setError('');
       gbSuccessEl.hidden = false;
       gbName.value = '';
