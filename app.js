@@ -148,8 +148,12 @@
     return d.getFullYear() + '.' + String(d.getMonth() + 1).padStart(2, '0') + '.' + String(d.getDate()).padStart(2, '0');
   }
 
-  var editIdx = -1;
-  var armedDelIdx = -1;
+  /* Track the entry object being edited/armed-for-delete, not its array
+     index — indices shift on splice/unshift and go stale mid-interaction. */
+  var editEntry = null;
+  var editDraft = null;
+  var armedDelEntry = null;
+  var armedDelBtn = null;
   var armTimer = null;
 
   function persistLocal() {
@@ -157,11 +161,24 @@
     try { localStorage.setItem('jw_guestbook', JSON.stringify(entries)); } catch (e) {}
   }
 
-  function removeEntry(idx) {
-    var en = entries[idx];
+  /* Disarms via direct DOM mutation, not a renderEntries() rebuild — a
+     rebuild would blow away in-progress edit input on another card. */
+  function disarmDelete() {
+    clearTimeout(armTimer);
+    armTimer = null;
+    if (armedDelBtn) {
+      armedDelBtn.textContent = T[lang].btnDelete;
+      armedDelBtn.classList.remove('gb-entry__act--armed');
+    }
+    armedDelEntry = null;
+    armedDelBtn = null;
+  }
+
+  function removeEntry(en) {
     function done() {
-      entries.splice(idx, 1);
-      if (editIdx === idx) editIdx = -1;
+      var i = entries.indexOf(en);
+      if (i !== -1) entries.splice(i, 1);
+      if (editEntry === en) { editEntry = null; editDraft = null; }
       setError('');
       persistLocal();
       renderEntries();
@@ -175,12 +192,11 @@
     }
   }
 
-  function updateEntry(idx, name, role, message) {
-    var en = entries[idx];
-    var patch = { name: name, role: role, message: message };
-    function done() {
-      entries[idx] = Object.assign({}, en, patch);
-      editIdx = -1;
+  function updateEntry(en, patch) {
+    function done(saved) {
+      Object.assign(en, saved || patch);
+      editEntry = null;
+      editDraft = null;
       setError('');
       persistLocal();
       renderEntries();
@@ -191,19 +207,21 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(patch)
       })
-        .then(function (res) { if (!res.ok) throw new Error('fail'); done(); })
+        .then(function (res) { if (!res.ok) throw new Error('fail'); return res.json(); })
+        .then(done)
         .catch(function () { setError('server'); });
     } else {
       done();
     }
   }
 
-  function makeInput(tag, className, value, placeholder) {
+  function makeInput(tag, className, value, placeholder, onInput) {
     var el = document.createElement(tag);
     el.className = className;
     el.value = value;
     el.placeholder = placeholder;
     if (tag === 'textarea') el.rows = 3;
+    el.addEventListener('input', onInput);
     return el;
   }
 
@@ -211,16 +229,20 @@
     var t = T[lang];
     gbEntries.querySelectorAll('.gb-entry').forEach(function (el) { el.remove(); });
     gbEmpty.hidden = entries.length > 0;
-    entries.forEach(function (en, idx) {
+    entries.forEach(function (en) {
       var card = document.createElement('div');
       card.className = 'gb-entry';
 
-      if (idx === editIdx) {
+      if (en === editEntry) {
         var form = document.createElement('div');
         form.className = 'gb-entry__form';
-        var nameIn = makeInput('input', 'gb__input gb__input--sm', en.name || '', t.phName);
-        var roleIn = makeInput('input', 'gb__input gb__input--sm', en.role || '', t.phRole);
-        var msgIn = makeInput('textarea', 'gb__input gb__input--sm gb__textarea', en.message || '', t.phMsg);
+        /* Values come from editDraft (not `en`) and every keystroke writes
+           back into it, so a re-render triggered elsewhere (language
+           toggle, a delete-arm timeout on another card) never discards
+           what the user typed. */
+        var nameIn = makeInput('input', 'gb__input gb__input--sm', editDraft.name, t.phName, function () { editDraft.name = nameIn.value; });
+        var roleIn = makeInput('input', 'gb__input gb__input--sm', editDraft.role, t.phRole, function () { editDraft.role = roleIn.value; });
+        var msgIn = makeInput('textarea', 'gb__input gb__input--sm gb__textarea', editDraft.message, t.phMsg, function () { editDraft.message = msgIn.value; });
         var btns = document.createElement('div');
         btns.className = 'gb-entry__btns';
         var saveBtn = document.createElement('button');
@@ -228,18 +250,19 @@
         saveBtn.className = 'gb-entry__save';
         saveBtn.textContent = t.btnSave;
         saveBtn.addEventListener('click', function () {
-          var name = (nameIn.value || '').trim();
-          var role = (roleIn.value || '').trim() || 'Visitor';
-          var message = (msgIn.value || '').trim();
+          var name = (editDraft.name || '').trim();
+          var role = (editDraft.role || '').trim() || 'Visitor';
+          var message = (editDraft.message || '').trim();
           if (!name || !message) { setError('required'); return; }
-          updateEntry(idx, name, role, message);
+          updateEntry(en, { name: name, role: role, message: message });
         });
         var cancelBtn = document.createElement('button');
         cancelBtn.type = 'button';
         cancelBtn.className = 'gb-entry__cancel';
         cancelBtn.textContent = t.btnCancel;
         cancelBtn.addEventListener('click', function () {
-          editIdx = -1;
+          editEntry = null;
+          editDraft = null;
           setError('');
           renderEntries();
         });
@@ -278,28 +301,28 @@
       editBtn.className = 'gb-entry__act';
       editBtn.textContent = t.btnEdit;
       editBtn.addEventListener('click', function () {
-        editIdx = idx;
-        armedDelIdx = -1;
+        disarmDelete();
+        editEntry = en;
+        editDraft = { name: en.name || '', role: en.role || '', message: en.message || '' };
         setError('');
         renderEntries();
       });
       var delBtn = document.createElement('button');
       delBtn.type = 'button';
-      delBtn.className = 'gb-entry__act gb-entry__act--danger' + (idx === armedDelIdx ? ' gb-entry__act--armed' : '');
-      delBtn.textContent = idx === armedDelIdx ? t.confirmDel : t.btnDelete;
+      delBtn.className = 'gb-entry__act gb-entry__act--danger' + (en === armedDelEntry ? ' gb-entry__act--armed' : '');
+      delBtn.textContent = en === armedDelEntry ? t.confirmDel : t.btnDelete;
+      if (en === armedDelEntry) armedDelBtn = delBtn; // resync after a rebuild (e.g. language toggle) replaced the old node
       delBtn.addEventListener('click', function () {
-        if (armedDelIdx === idx) {
-          clearTimeout(armTimer);
-          armedDelIdx = -1;
-          removeEntry(idx);
+        if (armedDelEntry === en) {
+          disarmDelete();
+          removeEntry(en);
         } else {
-          armedDelIdx = idx;
-          renderEntries();
-          clearTimeout(armTimer);
-          armTimer = setTimeout(function () {
-            armedDelIdx = -1;
-            renderEntries();
-          }, 3000);
+          disarmDelete();
+          armedDelEntry = en;
+          armedDelBtn = delBtn;
+          delBtn.textContent = t.confirmDel;
+          delBtn.classList.add('gb-entry__act--armed');
+          armTimer = setTimeout(disarmDelete, 3000);
         }
       });
       actions.appendChild(editBtn);
@@ -357,8 +380,9 @@
     var entry = { name: name, role: role, message: message, timestamp: new Date().toISOString() };
 
     function done() {
-      editIdx = -1;
-      armedDelIdx = -1;
+      editEntry = null;
+      editDraft = null;
+      disarmDelete();
       setError('');
       gbSuccessEl.hidden = false;
       gbName.value = '';
