@@ -389,7 +389,8 @@ img { display: block; }
 }
 
 /* ---------- SKILLS ---------- */
-.skill:first-of-type { margin-top: 24px; }
+.skills__grid { margin-top: 24px; }
+.skill:first-of-type { margin-top: 0; }
 .skill + .skill { margin-top: 22px; }
 .skill__head {
   display: flex;
@@ -481,4 +482,48 @@ img { display: block; }
   font-size: 10px;
   color: #7d9a87;
   margin-top: 22px;
+}
+
+/* ---------- RESPONSIVE OVERRIDES ---------- */
+@media (min-width: 768px) {
+  :root {
+    --page-w: 1000px;
+  }
+  .hero__title {
+    font-size: 64px;
+  }
+  .hero__lede {
+    font-size: 18px;
+    max-width: 500px;
+  }
+  .research {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 40px;
+  }
+  .research__item:nth-child(3) {
+    border-bottom: 1px solid #dbe6dc;
+  }
+  .section--projects {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    align-items: start;
+  }
+  .section--projects .eyebrow {
+    grid-column: 1 / -1;
+    margin-bottom: 8px;
+  }
+  .section--projects .project {
+    margin-top: 0;
+  }
+  .skills__grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    margin-top: 32px;
+  }
+  .skill + .skill {
+    margin-top: 0;
+  }
 }
