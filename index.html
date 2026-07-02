@@ -1,72 +1,188 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="en">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>ipseforma — Portfolio</title>
+<title>Jinwoo Jeon — Forecasting the energy of tomorrow</title>
+<meta name="description" content="Jinwoo Jeon — M.S. student researching AI for the renewable energy transition. Time-series forecasting, federated learning and knowledge graphs for power systems." />
 <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+<div class="page">
 
-<header class="hero">
-  <nav class="nav">
-    <span class="logo">ipseforma</span>
-    <div class="nav-links">
-      <a href="#work">Work</a>
-      <a href="#about">About</a>
-      <a href="#contact">Contact</a>
+  <!-- HERO -->
+  <header class="hero">
+    <img class="hero__img" src="assets/jinwoo.jpg" alt="Jinwoo Jeon" />
+    <div class="hero__scrim"></div>
+    <div class="hero__inner">
+      <div class="hero__top">
+        <span class="hero__name">JEON JINWOO</span>
+        <div class="hero__status">
+          <span class="hero__dot"></span>
+          <span>OPEN TO COLLAB</span>
+        </div>
+      </div>
+      <div class="hero__bottom">
+        <h1 class="hero__title">Forecasting the<br />energy of tomorrow.</h1>
+        <p class="hero__lede">Jinwoo Jeon — M.S. student researching AI for the renewable energy transition.</p>
+        <div class="hero__links">
+          <a class="btn btn--github" href="https://github.com/zeenoo11">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="#ffffff" aria-hidden="true"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"></path></svg>
+            <span>GitHub</span>
+          </a>
+          <a class="btn btn--linkedin" href="https://www.linkedin.com/in/jinwoojeon">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="#ffffff" aria-hidden="true"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.225 0z"></path></svg>
+            <span>LinkedIn</span>
+          </a>
+          <a class="btn btn--instagram" href="https://www.instagram.com/zeeee_noo">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="#ffffff" aria-hidden="true"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"></path></svg>
+            <span>Instagram</span>
+          </a>
+        </div>
+        <div class="hero__scroll">SCROLL ↓</div>
+      </div>
     </div>
-  </nav>
+  </header>
 
-  <div class="hero-content">
-    <h1>안녕하세요, <span>ipseforma</span>입니다</h1>
-    <p>여기에 한 줄 소개 문구를 적어주세요 — 무엇을 만드는 사람인지, 어떤 것에 관심이 있는지.</p>
-    <a class="cta" href="#work">작업물 보기 ↓</a>
-  </div>
-</header>
+  <!-- ABOUT & VISION -->
+  <section class="section section--light" id="about">
+    <div class="eyebrow eyebrow--light">
+      <span class="eyebrow__label">01 — ABOUT &amp; VISION</span>
+      <span class="eyebrow__rule"></span>
+    </div>
+    <h2 class="lead">I study how AI can carry the power grid through the renewable transition.</h2>
+    <p class="body">Renewables make the grid clean but unpredictable. My research makes it predictable again — with models that respect the privacy of the homes they learn from.</p>
+    <ul class="research">
+      <li class="research__item"><span class="research__num">01</span><div><div class="research__title">Energy with AI</div><div class="research__desc">Load &amp; generation forecasting for the grid</div></div></li>
+      <li class="research__item"><span class="research__num">02</span><div><div class="research__title">Time-series Forecasting</div><div class="research__desc">Sequence models for demand &amp; net-load</div></div></li>
+      <li class="research__item"><span class="research__num">03</span><div><div class="research__title">Federated Learning</div><div class="research__desc">Training on data that never leaves home</div></div></li>
+      <li class="research__item research__item--last"><span class="research__num">04</span><div><div class="research__title">Knowledge Graph</div><div class="research__desc">GNNs &amp; GraphRAG over structured knowledge</div></div></li>
+    </ul>
+  </section>
 
-<main>
-  <section id="work" class="section">
-    <h2>Work</h2>
-    <div class="grid">
-      <article class="card">
-        <h3>프로젝트 이름</h3>
-        <p>프로젝트에 대한 짧은 설명을 여기 적어주세요.</p>
-        <a href="#">자세히 보기 →</a>
-      </article>
-      <article class="card">
-        <h3>프로젝트 이름</h3>
-        <p>프로젝트에 대한 짧은 설명을 여기 적어주세요.</p>
-        <a href="#">자세히 보기 →</a>
-      </article>
-      <article class="card">
-        <h3>프로젝트 이름</h3>
-        <p>프로젝트에 대한 짧은 설명을 여기 적어주세요.</p>
-        <a href="#">자세히 보기 →</a>
-      </article>
+  <!-- CAREER JOURNEY -->
+  <section class="section section--dark" id="career">
+    <div class="eyebrow eyebrow--dark">
+      <span class="eyebrow__label">02 — CAREER JOURNEY</span>
+      <span class="eyebrow__rule"></span>
+    </div>
+    <h2 class="lead lead--dark">From energy engineering<br />to energy intelligence.</h2>
+    <ol class="timeline">
+      <li class="tl">
+        <div class="tl__rail"><span class="tl__dot tl__dot--active"></span><span class="tl__line"></span></div>
+        <div class="tl__body">
+          <div class="tl__date tl__date--active">2025.03 — PRESENT</div>
+          <div class="tl__role">M.S. in Data Science</div>
+          <div class="tl__org">Graduate School of Data Science, Kyungpook National University</div>
+          <p class="tl__note">Researching time-series forecasting, federated learning and knowledge graphs for power systems.</p>
+        </div>
+      </li>
+      <li class="tl">
+        <div class="tl__rail"><span class="tl__dot"></span><span class="tl__line"></span></div>
+        <div class="tl__body">
+          <div class="tl__date">2024.07 — 2025.10</div>
+          <div class="tl__role">AI Engineer</div>
+          <div class="tl__org">Smart-factory AI solutions company</div>
+          <p class="tl__note">Built and shipped AI solutions for manufacturing — models that had to work outside the lab.</p>
+        </div>
+      </li>
+      <li class="tl">
+        <div class="tl__rail"><span class="tl__dot"></span></div>
+        <div class="tl__body tl__body--last">
+          <div class="tl__date">— 2025.02</div>
+          <div class="tl__role">B.S. in New &amp; Renewable Energy Engineering</div>
+          <div class="tl__org">Kyungpook National University</div>
+          <p class="tl__note">Where the question started: how does a renewable grid stay reliable?</p>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <!-- PROJECTS -->
+  <section class="section section--light section--projects" id="projects">
+    <div class="eyebrow eyebrow--light">
+      <span class="eyebrow__label">03 — PROJECTS</span>
+      <span class="eyebrow__rule"></span>
+    </div>
+    <article class="project">
+      <div class="project__head">
+        <span class="project__name">RoundCB</span>
+        <span class="badge badge--fill" lang="ko">KIIE 춘계학술대회</span>
+      </div>
+      <p class="project__desc" lang="ko">연합학습 기반 가구 단위 피크부하 예측. 각 가정의 전력 데이터를 중앙 서버로 모으지 않고 학습하는 프레임워크.</p>
+      <div class="tags">
+        <span class="tag">Federated Learning</span>
+        <span class="tag">Peak Load</span>
+        <span class="tag">PyTorch</span>
+      </div>
+    </article>
+    <article class="project">
+      <div class="project__head">
+        <span class="project__name">V2G Net-load Forecasting</span>
+        <span class="badge badge--outline">RESEARCH</span>
+      </div>
+      <p class="project__desc" lang="ko">GNN의 적응형 인접행렬과 SUMO 시뮬레이션을 활용한 V2G(Vehicle-to-Grid) 환경 넷로드 예측 연구.</p>
+      <div class="tags">
+        <span class="tag">GNN</span>
+        <span class="tag">SUMO</span>
+        <span class="tag">Time-series</span>
+      </div>
+    </article>
+    <article class="project">
+      <div class="project__head">
+        <span class="project__name">Philograph</span>
+        <span class="badge badge--outline">SERVICE</span>
+      </div>
+      <p class="project__desc" lang="ko">SEP(스탠퍼드 철학 백과) 아티클로 구축한 철학 지식그래프. GNN과 GraphRAG로 서비스 구축.</p>
+      <div class="tags">
+        <span class="tag">Knowledge Graph</span>
+        <span class="tag">GraphRAG</span>
+        <span class="tag">GNN</span>
+      </div>
+    </article>
+  </section>
+
+  <!-- SKILL ARCHITECTURE -->
+  <section class="section section--light" id="skills">
+    <div class="eyebrow eyebrow--light">
+      <span class="eyebrow__label">04 — SKILL ARCHITECTURE</span>
+      <span class="eyebrow__rule"></span>
+    </div>
+    <div class="skill">
+      <div class="skill__head"><span class="skill__name">Data Analysis</span><span class="skill__meta">ML · DL · PyTorch</span></div>
+      <div class="skill__bar"><span class="skill__fill" style="width:88%"></span></div>
+      <p class="skill__desc" lang="ko">모델링부터 검증까지 — 시계열 예측, 딥러닝 아키텍처 설계, 실험 관리.</p>
+    </div>
+    <div class="skill">
+      <div class="skill__head"><span class="skill__name">Software</span><span class="skill__meta">Python · DBMS</span></div>
+      <div class="skill__bar"><span class="skill__fill" style="width:76%"></span></div>
+      <p class="skill__desc" lang="ko">연구를 서비스로 옮기는 엔지니어링 — 데이터 파이프라인, DB 설계, 배포.</p>
+    </div>
+    <div class="used">
+      <div class="used__label">ONCE I'VE USED</div>
+      <div class="chips">
+        <span class="chip"><svg width="13" height="13" viewBox="0 0 24 24" fill="#171515" aria-hidden="true"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"></path></svg>GitHub</span>
+        <span class="chip"><span class="chip__dot" style="background:#ee4c2c"></span>PyTorch</span>
+        <span class="chip"><span class="chip__dot" style="background:#22314e"></span>ROS2</span>
+        <span class="chip"><span class="chip__dot" style="background:#644df6"></span>vLLM</span>
+        <span class="chip"><span class="chip__dot" style="background:#4a90d9"></span>LM Studio</span>
+        <span class="chip"><span class="chip__dot" style="background:#3776ab"></span>Python</span>
+      </div>
     </div>
   </section>
 
-  <section id="about" class="section alt">
-    <h2>About</h2>
-    <p>자기소개, 경력, 관심 분야 등을 이곳에 작성해주세요.</p>
-  </section>
-
-  <section id="contact" class="section">
-    <h2>Contact</h2>
-    <p>연락 받을 수 있는 채널을 남겨주세요.</p>
-    <div class="links">
-      <a href="mailto:hello@ipseforma.com">hello@ipseforma.com</a>
-      <a href="https://github.com/zeenoo11" target="_blank" rel="noopener">GitHub</a>
-      <a href="https://blog.ipseforma.com" target="_blank" rel="noopener">Blog</a>
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="footer__cta">Let's build the cleaner grid.</div>
+    <div class="footer__links">
+      <a href="https://github.com/zeenoo11">GITHUB</a>
+      <a href="https://www.linkedin.com/in/jinwoojeon">LINKEDIN</a>
+      <a href="https://www.instagram.com/zeeee_noo">INSTAGRAM</a>
     </div>
-  </section>
-</main>
+    <div class="footer__copy">© <span id="year">2026</span> Jinwoo Jeon — Daegu, KR</div>
+  </footer>
 
-<footer>
-  <p>&copy; <span id="year"></span> ipseforma</p>
-</footer>
-
+</div>
 <script>
   document.getElementById('year').textContent = new Date().getFullYear();
 </script>
