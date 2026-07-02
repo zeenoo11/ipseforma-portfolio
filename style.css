@@ -26,9 +26,25 @@
 
 * { box-sizing: border-box; }
 
+:focus-visible {
+  outline: 2px solid var(--acc);
+  outline-offset: 3px;
+}
+
+.section--dark :focus-visible,
+.footer :focus-visible {
+  outline-color: var(--acc-light);
+}
+
 html, body {
   margin: 0;
   padding: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
 }
 
 body {
@@ -44,9 +60,30 @@ body {
   background: var(--page);
   display: flex;
   flex-direction: column;
+  position: relative;
 }
 
 img { display: block; }
+
+.skip-link {
+  position: absolute;
+  top: -50px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--acc);
+  color: #fff;
+  padding: 10px 20px;
+  z-index: 1000;
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 0 0 12px 12px;
+  transition: top 0.2s ease;
+}
+
+.skip-link:focus {
+  top: 0;
+}
 
 /* ---------- HERO ---------- */
 .hero {
