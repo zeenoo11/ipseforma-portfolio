@@ -12,9 +12,10 @@ const DATA_DIR = process.env.DATA_DIR || path.join(ROOT, 'data');
 const DATA_FILE = path.join(DATA_DIR, 'guestbook.json');
 const PORT = process.env.PORT || 80;
 const MAX_BODY_BYTES = 20 * 1024;
-const MAX_FIELD_LEN = { name: 80, role: 80, message: 2000 };
-/* Fixed admin password gating guestbook deletion — enforced here so a
-   direct API call can't bypass the client's password prompt. */
+const MAX_FIELD_LEN = { name: 80, role: 80, message: 2000, password: 100 };
+/* Fixed master password that can manage every entry, on top of each
+   entry's own optional password (set when it was signed). Enforced here
+   so a direct API call can't bypass the client's password prompt. */
 const ADMIN_PASSWORD = '1233';
 
 const MIME = {
@@ -29,6 +30,12 @@ const MIME = {
   '.ico': 'image/x-icon',
   '.webp': 'image/webp'
 };
+/* Portainer rebuilds on every push, but Cloudflare's default edge cache
+   for recognized static extensions (~4h) doesn't know that — without an
+   explicit no-store, visitors can keep running JS/CSS from before the
+   deploy. Images are fine to cache since they don't change between
+   deploys. */
+const NO_STORE_EXT = { '.html': true, '.js': true, '.css': true };
 
 function ensureDataFile() {
   fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -65,12 +72,35 @@ function sanitize(value, maxLen) {
   return String(value == null ? '' : value).trim().slice(0, maxLen);
 }
 
+function hashPassword(password, salt) {
+  return crypto.createHash('sha256').update(salt + password).digest('hex');
+}
+
+/* True if `password` is either the master password or this entry's own
+   (entries signed without one can only be managed by the master password). */
+function checkAccess(entry, password) {
+  if (password === ADMIN_PASSWORD) return true;
+  if (!entry.passwordHash) return false;
+  return hashPassword(password, entry.passwordSalt) === entry.passwordHash;
+}
+
+/* Never send passwordHash/passwordSalt to clients. */
+function publicEntry(entry) {
+  var out = {};
+  for (var key in entry) {
+    if (key !== 'passwordHash' && key !== 'passwordSalt') out[key] = entry[key];
+  }
+  out.hasPassword = !!entry.passwordHash;
+  return out;
+}
+
 function sendJSON(res, status, body) {
-  if (body == null) { res.writeHead(status); res.end(); return; }
+  if (body == null) { res.writeHead(status, { 'Cache-Control': 'no-store' }); res.end(); return; }
   var data = JSON.stringify(body);
   res.writeHead(status, {
     'Content-Type': 'application/json; charset=utf-8',
-    'Content-Length': Buffer.byteLength(data)
+    'Content-Length': Buffer.byteLength(data),
+    'Cache-Control': 'no-store'
   });
   res.end(data);
 }
@@ -99,9 +129,12 @@ function serveStatic(req, res, urlPath) {
   var full = path.join(ROOT, rel);
   if (!full.startsWith(ROOT)) { res.writeHead(403); res.end('Forbidden'); return; }
   fs.readFile(full, function (err, data) {
-    if (err) { res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' }); res.end('Not found'); return; }
+    if (err) { res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' }); res.end('Not found'); return; }
     var ext = path.extname(full).toLowerCase();
-    res.writeHead(200, { 'Content-Type': MIME[ext] || 'application/octet-stream' });
+    res.writeHead(200, {
+      'Content-Type': MIME[ext] || 'application/octet-stream',
+      'Cache-Control': NO_STORE_EXT[ext] ? 'no-store' : 'public, max-age=86400'
+    });
     res.end(data);
   });
 }
@@ -110,7 +143,7 @@ async function handleGuestbookList(req, res) {
   var entries = readEntries().sort(function (a, b) {
     return new Date(b.timestamp) - new Date(a.timestamp);
   });
-  sendJSON(res, 200, entries);
+  sendJSON(res, 200, entries.map(publicEntry));
 }
 
 async function handleGuestbookCreate(req, res) {
@@ -119,13 +152,18 @@ async function handleGuestbookCreate(req, res) {
   var name = sanitize(body.name, MAX_FIELD_LEN.name);
   var role = sanitize(body.role, MAX_FIELD_LEN.role) || 'Visitor';
   var message = sanitize(body.message, MAX_FIELD_LEN.message);
+  var password = sanitize(body.password, MAX_FIELD_LEN.password);
   if (!name || !message) return sendJSON(res, 400, { error: 'name and message are required' });
 
-  var entries = readEntries();
   var entry = { id: crypto.randomUUID(), name: name, role: role, message: message, timestamp: new Date().toISOString() };
+  if (password) {
+    entry.passwordSalt = crypto.randomBytes(8).toString('hex');
+    entry.passwordHash = hashPassword(password, entry.passwordSalt);
+  }
+  var entries = readEntries();
   entries.unshift(entry);
   await writeEntries(entries);
-  sendJSON(res, 201, entry);
+  sendJSON(res, 201, publicEntry(entry));
 }
 
 async function handleGuestbookUpdate(req, res, id) {
@@ -139,18 +177,21 @@ async function handleGuestbookUpdate(req, res, id) {
   var entries = readEntries();
   var idx = entries.findIndex(function (e) { return e.id === id; });
   if (idx === -1) return sendJSON(res, 404, { error: 'not found' });
+  if (!checkAccess(entries[idx], req.headers['x-guestbook-password'])) {
+    return sendJSON(res, 401, { error: 'invalid password' });
+  }
   entries[idx] = Object.assign({}, entries[idx], { name: name, role: role, message: message });
   await writeEntries(entries);
-  sendJSON(res, 200, entries[idx]);
+  sendJSON(res, 200, publicEntry(entries[idx]));
 }
 
 async function handleGuestbookDelete(req, res, id) {
-  if (req.headers['x-guestbook-password'] !== ADMIN_PASSWORD) {
-    return sendJSON(res, 401, { error: 'invalid password' });
-  }
   var entries = readEntries();
   var idx = entries.findIndex(function (e) { return e.id === id; });
   if (idx === -1) return sendJSON(res, 404, { error: 'not found' });
+  if (!checkAccess(entries[idx], req.headers['x-guestbook-password'])) {
+    return sendJSON(res, 401, { error: 'invalid password' });
+  }
   entries.splice(idx, 1);
   await writeEntries(entries);
   sendJSON(res, 204, null);

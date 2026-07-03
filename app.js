@@ -44,7 +44,8 @@
       footHead: 'Let’s build a happier, cleaner world.',
       btnEdit: 'Edit', btnDelete: 'Delete',
       btnSave: 'Save', btnCancel: 'Cancel',
-      phDelPassword: 'Admin password',
+      phSetPassword: 'Password (optional — needed to edit or delete later)',
+      phAuthPassword: 'Password',
       err_required: 'Please fill in your name and message.',
       err_server: 'Couldn’t reach the server. Please try again.',
       err_wrongPassword: 'Incorrect password.'
@@ -89,7 +90,8 @@
       footHead: '더 행복하고 깨끗한 세상을 함께 만들어요.',
       btnEdit: '수정', btnDelete: '삭제',
       btnSave: '저장', btnCancel: '취소',
-      phDelPassword: '관리자 비밀번호',
+      phSetPassword: '비밀번호 (선택 — 나중에 수정·삭제 시 필요)',
+      phAuthPassword: '비밀번호',
       err_required: '이름과 메시지를 입력해주세요.',
       err_server: '서버 연결에 실패했어요. 잠시 후 다시 시도해주세요.',
       err_wrongPassword: '비밀번호가 올바르지 않습니다.'
@@ -135,6 +137,7 @@
   var gbName = document.getElementById('gbName');
   var gbRole = document.getElementById('gbRole');
   var gbMsg = document.getElementById('gbMsg');
+  var gbPassword = document.getElementById('gbPassword');
   var gbErrorEl = document.getElementById('gbError');
   var gbSuccessEl = document.getElementById('gbSuccess');
   var gbNotice = document.getElementById('gbNotice');
@@ -156,16 +159,21 @@
      indices shift on splice/unshift and go stale mid-interaction. */
   var editEntry = null;
   var editDraft = null;
+  var editError = false;
   var deleteEntry = null;
   var deletePassword = '';
   var deleteError = false;
 
-  /* Fixed admin password gating deletion. This lives in a public JS file,
-     so it's a "keep casual visitors from nuking each other's entries"
-     speed bump, not real auth — the point is to require deliberate intent,
-     not to withstand someone reading the source. The server enforces the
-     same password so a direct API call can't skip the prompt either. */
+  /* Fixed master password that can manage every entry, on top of each
+     entry's own optional password (set when it was signed). Both live in
+     public JS/API responses, so this is a "keep casual visitors from
+     touching each other's entries" speed bump, not real auth — the server
+     enforces the same rule so a direct API call can't skip it either. */
   var ADMIN_PASSWORD = '1233';
+
+  function canAuthLocally(en, password) {
+    return password === ADMIN_PASSWORD || (!!en.password && password === en.password);
+  }
 
   function persistLocal() {
     if (mode !== 'local') return;
@@ -200,16 +208,17 @@
         })
         .catch(function () { setError('server'); });
     } else {
-      if (password !== ADMIN_PASSWORD) { deleteError = true; renderEntries(); return; }
+      if (!canAuthLocally(en, password)) { deleteError = true; renderEntries(); return; }
       done();
     }
   }
 
-  function updateEntry(en, patch) {
+  function updateEntry(en, patch, password) {
     function done(saved) {
       Object.assign(en, saved || patch);
       editEntry = null;
       editDraft = null;
+      editError = false;
       setError('');
       persistLocal();
       renderEntries();
@@ -217,14 +226,19 @@
     if (mode === 'server') {
       fetch('/api/guestbook/' + encodeURIComponent(en.id), {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'X-Guestbook-Password': password },
         body: JSON.stringify(patch)
       })
-        .then(function (res) { if (!res.ok) throw new Error('fail'); return res.json(); })
-        .then(done)
+        .then(function (res) {
+          if (res.status === 401) { editError = true; renderEntries(); return; }
+          if (!res.ok) throw new Error('fail');
+          return res.json();
+        })
+        .then(function (saved) { if (saved) done(saved); })
         .catch(function () { setError('server'); });
     } else {
-      done();
+      if (!canAuthLocally(en, password)) { editError = true; renderEntries(); return; }
+      done(patch);
     }
   }
 
@@ -256,6 +270,19 @@
         var nameIn = makeInput('input', 'gb__input gb__input--sm', editDraft.name, t.phName, function () { editDraft.name = nameIn.value; });
         var roleIn = makeInput('input', 'gb__input gb__input--sm', editDraft.role, t.phRole, function () { editDraft.role = roleIn.value; });
         var msgIn = makeInput('textarea', 'gb__input gb__input--sm gb__textarea', editDraft.message, t.phMsg, function () { editDraft.message = msgIn.value; });
+        var pwIn = makeInput('input', 'gb__input gb__input--sm', editDraft.password, t.phAuthPassword, function () { editDraft.password = pwIn.value; editError = false; });
+        pwIn.type = 'password';
+        pwIn.autocomplete = 'off';
+        form.appendChild(nameIn);
+        form.appendChild(roleIn);
+        form.appendChild(msgIn);
+        form.appendChild(pwIn);
+        if (editError) {
+          var eerr = document.createElement('div');
+          eerr.className = 'gb__error';
+          eerr.textContent = t.err_wrongPassword;
+          form.appendChild(eerr);
+        }
         var btns = document.createElement('div');
         btns.className = 'gb-entry__btns';
         var saveBtn = document.createElement('button');
@@ -267,7 +294,7 @@
           var role = (editDraft.role || '').trim() || 'Visitor';
           var message = (editDraft.message || '').trim();
           if (!name || !message) { setError('required'); return; }
-          updateEntry(en, { name: name, role: role, message: message });
+          updateEntry(en, { name: name, role: role, message: message }, editDraft.password || '');
         });
         var cancelBtn = document.createElement('button');
         cancelBtn.type = 'button';
@@ -276,14 +303,12 @@
         cancelBtn.addEventListener('click', function () {
           editEntry = null;
           editDraft = null;
+          editError = false;
           setError('');
           renderEntries();
         });
         btns.appendChild(saveBtn);
         btns.appendChild(cancelBtn);
-        form.appendChild(nameIn);
-        form.appendChild(roleIn);
-        form.appendChild(msgIn);
         form.appendChild(btns);
         card.appendChild(form);
         gbEntries.appendChild(card);
@@ -293,7 +318,7 @@
       if (en === deleteEntry) {
         var dform = document.createElement('div');
         dform.className = 'gb-entry__form';
-        var pwIn = makeInput('input', 'gb__input gb__input--sm', deletePassword, t.phDelPassword, function () { deletePassword = pwIn.value; deleteError = false; });
+        var pwIn = makeInput('input', 'gb__input gb__input--sm', deletePassword, t.phAuthPassword, function () { deletePassword = pwIn.value; deleteError = false; });
         pwIn.type = 'password';
         pwIn.autocomplete = 'off';
         var confirmBtn = document.createElement('button');
@@ -357,7 +382,8 @@
       editBtn.addEventListener('click', function () {
         cancelDelete();
         editEntry = en;
-        editDraft = { name: en.name || '', role: en.role || '', message: en.message || '' };
+        editDraft = { name: en.name || '', role: en.role || '', message: en.message || '', password: '' };
+        editError = false;
         setError('');
         renderEntries();
       });
@@ -368,6 +394,7 @@
       delBtn.addEventListener('click', function () {
         editEntry = null;
         editDraft = null;
+        editError = false;
         deleteEntry = en;
         deletePassword = '';
         deleteError = false;
@@ -421,22 +448,25 @@
     var name = (gbName.value || '').trim();
     var role = (gbRole.value || '').trim() || 'Visitor';
     var message = (gbMsg.value || '').trim();
+    var password = (gbPassword.value || '').trim();
     if (!name || !message) {
       setError('required');
       gbSuccessEl.hidden = true;
       return;
     }
-    var entry = { name: name, role: role, message: message, timestamp: new Date().toISOString() };
+    var entry = { name: name, role: role, message: message, password: password || null, timestamp: new Date().toISOString() };
 
     function done() {
       editEntry = null;
       editDraft = null;
+      editError = false;
       cancelDelete();
       setError('');
       gbSuccessEl.hidden = false;
       gbName.value = '';
       gbRole.value = '';
       gbMsg.value = '';
+      gbPassword.value = '';
       renderEntries();
       clearTimeout(successTimer);
       successTimer = setTimeout(function () { gbSuccessEl.hidden = true; }, 3000);
@@ -446,7 +476,7 @@
       fetch('/api/guestbook', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name, role: role, message: message })
+        body: JSON.stringify({ name: name, role: role, message: message, password: password })
       })
         .then(function (res) {
           if (!res.ok) throw new Error('fail');
