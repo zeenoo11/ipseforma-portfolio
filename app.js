@@ -42,10 +42,12 @@
       gbThanks: 'Thanks for signing — your entry is live.',
       gbEmpty: 'The guestbook is empty — be the first to sign.',
       footHead: 'Let’s build a happier, cleaner world.',
-      btnEdit: 'Edit', btnDelete: 'Delete', confirmDel: 'Sure?',
+      btnEdit: 'Edit', btnDelete: 'Delete',
       btnSave: 'Save', btnCancel: 'Cancel',
+      phDelPassword: 'Admin password',
       err_required: 'Please fill in your name and message.',
-      err_server: 'Couldn’t reach the server. Please try again.'
+      err_server: 'Couldn’t reach the server. Please try again.',
+      err_wrongPassword: 'Incorrect password.'
     },
     ko: {
       navAbout: '소개', navCareer: '여정', navProjects: '프로젝트', navSkills: '스킬', navGuestbook: '방명록',
@@ -85,10 +87,12 @@
       gbThanks: '남겨주셔서 감사합니다 — 방명록에 등록됐어요.',
       gbEmpty: '아직 방명록이 비어 있어요. 첫 번째로 남겨보세요.',
       footHead: '더 행복하고 깨끗한 세상을 함께 만들어요.',
-      btnEdit: '수정', btnDelete: '삭제', confirmDel: '정말 삭제?',
+      btnEdit: '수정', btnDelete: '삭제',
       btnSave: '저장', btnCancel: '취소',
+      phDelPassword: '관리자 비밀번호',
       err_required: '이름과 메시지를 입력해주세요.',
-      err_server: '서버 연결에 실패했어요. 잠시 후 다시 시도해주세요.'
+      err_server: '서버 연결에 실패했어요. 잠시 후 다시 시도해주세요.',
+      err_wrongPassword: '비밀번호가 올바르지 않습니다.'
     }
   };
 
@@ -148,46 +152,55 @@
     return d.getFullYear() + '.' + String(d.getMonth() + 1).padStart(2, '0') + '.' + String(d.getDate()).padStart(2, '0');
   }
 
-  /* Track the entry object being edited/armed-for-delete, not its array
-     index — indices shift on splice/unshift and go stale mid-interaction. */
+  /* Track the entry object being edited/deleted, not its array index —
+     indices shift on splice/unshift and go stale mid-interaction. */
   var editEntry = null;
   var editDraft = null;
-  var armedDelEntry = null;
-  var armedDelBtn = null;
-  var armTimer = null;
+  var deleteEntry = null;
+  var deletePassword = '';
+  var deleteError = false;
+
+  /* Fixed admin password gating deletion. This lives in a public JS file,
+     so it's a "keep casual visitors from nuking each other's entries"
+     speed bump, not real auth — the point is to require deliberate intent,
+     not to withstand someone reading the source. The server enforces the
+     same password so a direct API call can't skip the prompt either. */
+  var ADMIN_PASSWORD = '1233';
 
   function persistLocal() {
     if (mode !== 'local') return;
     try { localStorage.setItem('jw_guestbook', JSON.stringify(entries)); } catch (e) {}
   }
 
-  /* Disarms via direct DOM mutation, not a renderEntries() rebuild — a
-     rebuild would blow away in-progress edit input on another card. */
-  function disarmDelete() {
-    clearTimeout(armTimer);
-    armTimer = null;
-    if (armedDelBtn) {
-      armedDelBtn.textContent = T[lang].btnDelete;
-      armedDelBtn.classList.remove('gb-entry__act--armed');
-    }
-    armedDelEntry = null;
-    armedDelBtn = null;
+  function cancelDelete() {
+    deleteEntry = null;
+    deletePassword = '';
+    deleteError = false;
   }
 
-  function removeEntry(en) {
+  function removeEntry(en, password) {
     function done() {
       var i = entries.indexOf(en);
       if (i !== -1) entries.splice(i, 1);
       if (editEntry === en) { editEntry = null; editDraft = null; }
+      cancelDelete();
       setError('');
       persistLocal();
       renderEntries();
     }
     if (mode === 'server') {
-      fetch('/api/guestbook/' + encodeURIComponent(en.id), { method: 'DELETE' })
-        .then(function (res) { if (!res.ok) throw new Error('fail'); done(); })
+      fetch('/api/guestbook/' + encodeURIComponent(en.id), {
+        method: 'DELETE',
+        headers: { 'X-Guestbook-Password': password }
+      })
+        .then(function (res) {
+          if (res.status === 401) { deleteError = true; renderEntries(); return; }
+          if (!res.ok) throw new Error('fail');
+          done();
+        })
         .catch(function () { setError('server'); });
     } else {
+      if (password !== ADMIN_PASSWORD) { deleteError = true; renderEntries(); return; }
       done();
     }
   }
@@ -277,6 +290,47 @@
         return;
       }
 
+      if (en === deleteEntry) {
+        var dform = document.createElement('div');
+        dform.className = 'gb-entry__form';
+        var pwIn = makeInput('input', 'gb__input gb__input--sm', deletePassword, t.phDelPassword, function () { deletePassword = pwIn.value; deleteError = false; });
+        pwIn.type = 'password';
+        pwIn.autocomplete = 'off';
+        var confirmBtn = document.createElement('button');
+        pwIn.addEventListener('keydown', function (ev) {
+          if (ev.key === 'Enter') { ev.preventDefault(); confirmBtn.click(); }
+        });
+        dform.appendChild(pwIn);
+        if (deleteError) {
+          var derr = document.createElement('div');
+          derr.className = 'gb__error';
+          derr.textContent = t.err_wrongPassword;
+          dform.appendChild(derr);
+        }
+        var dbtns = document.createElement('div');
+        dbtns.className = 'gb-entry__btns';
+        confirmBtn.type = 'button';
+        confirmBtn.className = 'gb-entry__save';
+        confirmBtn.textContent = t.btnDelete;
+        confirmBtn.addEventListener('click', function () {
+          removeEntry(en, deletePassword);
+        });
+        var dcancelBtn = document.createElement('button');
+        dcancelBtn.type = 'button';
+        dcancelBtn.className = 'gb-entry__cancel';
+        dcancelBtn.textContent = t.btnCancel;
+        dcancelBtn.addEventListener('click', function () {
+          cancelDelete();
+          renderEntries();
+        });
+        dbtns.appendChild(confirmBtn);
+        dbtns.appendChild(dcancelBtn);
+        dform.appendChild(dbtns);
+        card.appendChild(dform);
+        gbEntries.appendChild(card);
+        return;
+      }
+
       var top = document.createElement('div');
       top.className = 'gb-entry__top';
       var name = document.createElement('span');
@@ -301,7 +355,7 @@
       editBtn.className = 'gb-entry__act';
       editBtn.textContent = t.btnEdit;
       editBtn.addEventListener('click', function () {
-        disarmDelete();
+        cancelDelete();
         editEntry = en;
         editDraft = { name: en.name || '', role: en.role || '', message: en.message || '' };
         setError('');
@@ -309,21 +363,16 @@
       });
       var delBtn = document.createElement('button');
       delBtn.type = 'button';
-      delBtn.className = 'gb-entry__act gb-entry__act--danger' + (en === armedDelEntry ? ' gb-entry__act--armed' : '');
-      delBtn.textContent = en === armedDelEntry ? t.confirmDel : t.btnDelete;
-      if (en === armedDelEntry) armedDelBtn = delBtn; // resync after a rebuild (e.g. language toggle) replaced the old node
+      delBtn.className = 'gb-entry__act gb-entry__act--danger';
+      delBtn.textContent = t.btnDelete;
       delBtn.addEventListener('click', function () {
-        if (armedDelEntry === en) {
-          disarmDelete();
-          removeEntry(en);
-        } else {
-          disarmDelete();
-          armedDelEntry = en;
-          armedDelBtn = delBtn;
-          delBtn.textContent = t.confirmDel;
-          delBtn.classList.add('gb-entry__act--armed');
-          armTimer = setTimeout(disarmDelete, 3000);
-        }
+        editEntry = null;
+        editDraft = null;
+        deleteEntry = en;
+        deletePassword = '';
+        deleteError = false;
+        setError('');
+        renderEntries();
       });
       actions.appendChild(editBtn);
       actions.appendChild(delBtn);
@@ -382,7 +431,7 @@
     function done() {
       editEntry = null;
       editDraft = null;
-      disarmDelete();
+      cancelDelete();
       setError('');
       gbSuccessEl.hidden = false;
       gbName.value = '';

@@ -13,6 +13,9 @@ const DATA_FILE = path.join(DATA_DIR, 'guestbook.json');
 const PORT = process.env.PORT || 80;
 const MAX_BODY_BYTES = 20 * 1024;
 const MAX_FIELD_LEN = { name: 80, role: 80, message: 2000 };
+/* Fixed admin password gating guestbook deletion — enforced here so a
+   direct API call can't bypass the client's password prompt. */
+const ADMIN_PASSWORD = '1233';
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -142,6 +145,9 @@ async function handleGuestbookUpdate(req, res, id) {
 }
 
 async function handleGuestbookDelete(req, res, id) {
+  if (req.headers['x-guestbook-password'] !== ADMIN_PASSWORD) {
+    return sendJSON(res, 401, { error: 'invalid password' });
+  }
   var entries = readEntries();
   var idx = entries.findIndex(function (e) { return e.id === id; });
   if (idx === -1) return sendJSON(res, 404, { error: 'not found' });

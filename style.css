@@ -49,6 +49,14 @@ html, body {
   padding: 0;
 }
 
+/* CJK text wraps between any two syllables by default (no inter-word
+   spaces to break on the way Latin script does) — keep Korean words
+   intact and only fall back to mid-word breaks when one truly can't fit. */
+html:lang(ko) {
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
 @media (prefers-reduced-motion: no-preference) {
   html {
     scroll-behavior: smooth;
@@ -734,10 +742,6 @@ input, textarea, button { font-family: inherit; }
 }
 .gb-entry__act:hover { color: #fff; }
 .gb-entry__act--danger:hover { color: #f0b9ae; }
-.gb-entry__act--armed {
-  color: #f0b9ae;
-  font-weight: 700;
-}
 .gb-entry__form {
   display: flex;
   flex-direction: column;
